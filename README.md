@@ -1,7 +1,5 @@
 # X Scheduler - A Full-Stack Twitter Scheduling Application
 
-![X Scheduler Banner](https://raw.githubusercontent.com/Ayushfeedtrends/x_scheduler_app/master/x-scheduler-banner.png)
-
 **X Scheduler** is a full-stack web application designed to empower users by allowing them to authenticate with their X (Twitter) account and schedule tweets to be posted at a future date and time. It features a secure and scalable backend built with NestJS and a modern, responsive frontend built with Next.js and Material-UI.
 
 This project demonstrates a complete end-to-end development workflow, including third-party API integration, secure authentication, database management, and automated background tasks.
