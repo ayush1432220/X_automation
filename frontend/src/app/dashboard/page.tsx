@@ -3,14 +3,17 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Typography, Container, CircularProgress, Button, Grid, Divider } from '@mui/material';
-import ScheduleForm from '@/components/dashboard/ScheduleForm'; // Import karein
-import TweetList from '@/components/dashboard/TweetList'; // Import karein
+import { Box, Typography, Container, CircularProgress, Button, Grid, Divider, Avatar } from '@mui/material';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'; // Naya icon import karein
+import ScheduleForm from '@/components/dashboard/ScheduleForm'; 
+import TweetList from '@/components/dashboard/TweetList';
 
+// User type ko update karein taaki profileImageUrl bhi include ho
 interface User {
   userId: string;
   username: string;
   name: string;
+  profileImageUrl?: string;
 }
 
 export default function DashboardPage() {
@@ -20,7 +23,6 @@ export default function DashboardPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleTweetScheduled = () => {
-    // Jab naya tweet schedule ho, toh list ko refresh karne ke liye trigger badal do
     setRefreshTrigger(prev => prev + 1);
   };
   
@@ -51,9 +53,9 @@ export default function DashboardPage() {
     fetchUser();
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('jwt_token');
-    router.push('/');
+  // Yeh function ab "Accounts" page par le jaayega
+  const handleManageAccounts = () => {
+    router.push('/dashboard/accounts');
   };
 
   if (loading) {
@@ -67,21 +69,30 @@ export default function DashboardPage() {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" component="h1">
-          Welcome, {user?.name || 'User'}!
-        </Typography>
-        <Button variant="outlined" color="error" onClick={handleLogout}>
-          Logout
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* User ki profile picture bhi add kar di hai */}
+          <Avatar src={user?.profileImageUrl || ''} alt={user?.name || 'User'} />
+          <Typography variant="h4" component="h1">
+            Welcome, {user?.name || 'User'}!
+          </Typography>
+        </Box>
+        
+        {/* --- LOGOUT BUTTON KI JAGAH NAYA BUTTON --- */}
+        <Button 
+          variant="contained" 
+          onClick={handleManageAccounts}
+          startIcon={<ManageAccountsIcon />}
+        >
+          Manage Accounts
         </Button>
+        {/* -------------------------------------- */}
+
       </Box>
       
       <Grid container spacing={4}>
-        {/* Left Side: Form */}
         <Grid item xs={12} md={5}>
           <ScheduleForm onTweetScheduled={handleTweetScheduled} />
         </Grid>
-
-        {/* Right Side: Lists */}
         <Grid item xs={12} md={7}>
           <Box>
             <TweetList listType="scheduled" refreshTrigger={refreshTrigger} />

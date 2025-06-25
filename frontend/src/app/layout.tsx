@@ -1,4 +1,3 @@
-// File: frontend/src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
 import '@fontsource/roboto/300.css';
