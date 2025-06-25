@@ -1,12 +1,15 @@
+// File: src/twitter/twitter.service.ts
+
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { firstValueFrom } from 'rxjs';
-import { Tweet } from './schemas/tweet.schema';
+import { Tweet,TweetSchema } from './schemas/tweet.schema';
 import { CreateTweetDto } from './dto/create-tweet.dto';
 import { ScheduleTweetDto } from './dto/schedule-tweet.dto';
+import { User, UserDocument ,UserSchema} from '../Auth/schemas/user.schema';
+
 
 @Injectable()
 export class TwitterService {
@@ -14,12 +17,20 @@ export class TwitterService {
 
   constructor(
     private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
     @InjectModel(Tweet.name) private tweetModel: Model<Tweet>,
+    // User model must be injected here to be used in postTweet
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>, 
   ) {}
 
   // Post tweet immediately
-  async postTweet(createTweetDto: CreateTweetDto, accessToken: string) {
+  async postTweet(createTweetDto: CreateTweetDto, userId: string) {
+    // Step 1: Find the user in the database
+    const user = await this.userModel.findById(userId);
+    if (!user || !user.accessToken) {
+      throw new HttpException('Twitter access token not found for this user.', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Step 2: Post the tweet using the user's access token
     try {
       const { data } = await firstValueFrom(
         this.httpService.post(
@@ -27,17 +38,18 @@ export class TwitterService {
           { text: createTweetDto.text },
           {
             headers: {
-              'Authorization': `Bearer ${accessToken}`,
+              'Authorization': `Bearer ${user.accessToken}`,
               'Content-Type': 'application/json',
             },
           },
         ),
       );
 
-      // Save to database
+      // Step 3: Save the posted tweet record to our database
       const tweet = new this.tweetModel({
         text: createTweetDto.text,
         twitterId: data.data.id,
+        userId: userId,
         status: 'posted',
         postedAt: new Date(),
       });
@@ -49,8 +61,9 @@ export class TwitterService {
         message: 'Tweet posted successfully',
       };
     } catch (error) {
+       const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
       throw new HttpException(
-        `Failed to post tweet: ${error.response?.data?.detail || error.message}`,
+        `Failed to post tweet: ${errorMessage}`,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -82,7 +95,7 @@ export class TwitterService {
     }
   }
 
-  // Get scheduled tweets
+  // Get scheduled tweets for a user
   async getScheduledTweets(userId: string) {
     return this.tweetModel.find({
       userId,
@@ -91,7 +104,7 @@ export class TwitterService {
     }).sort({ scheduledAt: 1 });
   }
 
-  // Get posted tweets
+  // Get posted tweets for a user
   async getPostedTweets(userId: string) {
     return this.tweetModel.find({
       userId,
@@ -99,48 +112,4 @@ export class TwitterService {
     }).sort({ postedAt: -1 });
   }
 
-  // Execute scheduled tweet
-  async executeScheduledTweet(tweetId: string, accessToken: string) {
-    const tweet = await this.tweetModel.findById(tweetId);
-    if (!tweet || tweet.status !== 'scheduled') {
-      throw new HttpException('Tweet not found or not scheduled', HttpStatus.NOT_FOUND);
-    }
-
-    try {
-      const { data } = await firstValueFrom(
-        this.httpService.post(
-          `${this.twitterApiUrl}/tweets`,
-          { text: tweet.text },
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          },
-        ),
-      );
-
-      // Update tweet status
-      tweet.twitterId = data.data.id;
-      tweet.status = 'posted';
-      tweet.postedAt = new Date();
-      await tweet.save();
-
-      return {
-        success: true,
-        data: data.data,
-        message: 'Scheduled tweet posted successfully',
-      };
-    } catch (error) {
-      // Mark as failed
-      tweet.status = 'failed';
-      tweet.error = error.response?.data?.detail || error.message;
-      await tweet.save();
-      
-      throw new HttpException(
-        `Failed to post scheduled tweet: ${error.response?.data?.detail || error.message}`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-}
+} 

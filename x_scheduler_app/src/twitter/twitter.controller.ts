@@ -20,15 +20,11 @@ export class TwitterController {
   constructor(private readonly twitterService: TwitterService) {}
 
   @Post('post')
-  async postTweet(
+    async postTweet(
     @Body() createTweetDto: CreateTweetDto,
     @Request() req,
   ) {
-    if (!req.user.accessToken) {
-      throw new HttpException('Twitter access token required', HttpStatus.UNAUTHORIZED);
-    }
-    
-    return this.twitterService.postTweet(createTweetDto, req.user.accessToken);
+    return this.twitterService.postTweet(createTweetDto, req.user.userId);
   }
 
   @Post('schedule')
