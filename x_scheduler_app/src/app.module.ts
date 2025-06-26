@@ -7,12 +7,14 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TwitterModule } from './twitter/twitter.module';
 import { AuthModule } from './Auth/auth.module';
-import { SchedulerModule } from './scheduler/scheduler.module';
+import { AgendaModule } from './agenda/agenda.module';
+
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     HttpModule.register({ timeout: 5000, maxRedirects: 5 }),
+    AgendaModule,
     ScheduleModule.forRoot(),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
@@ -25,7 +27,6 @@ import { SchedulerModule } from './scheduler/scheduler.module';
     }),
     TwitterModule,
     AuthModule,
-    SchedulerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

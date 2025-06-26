@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
 @Schema()
-export class Tweet extends Document {
+export class Tweet {
   @Prop({ required: true })
   text: string;
 
@@ -27,5 +27,8 @@ export class Tweet extends Document {
   @Prop()
   error?: string;
 }
+
+// ✅ Now TweetDocument will be properly typed with _id
+export type TweetDocument = Tweet & Document;
 
 export const TweetSchema = SchemaFactory.createForClass(Tweet);

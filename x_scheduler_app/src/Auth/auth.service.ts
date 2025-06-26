@@ -140,6 +140,7 @@ export class AuthService {
           },
         }),
       );
+      console.log('Access token refreshed successfully:', data);
       return {
         accessToken: data.access_token,
         refreshToken: data.refresh_token,
